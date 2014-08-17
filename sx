@@ -1,0 +1,200 @@
+#!/usr/bin/env node
+var readline = require('readline');
+var path = require('path');
+var modules = require('./modules');
+var parser = require('./parser');
+var compile = require('./compiler');
+
+var context = {};
+for (var name in global) context[name] = global[name];
+
+// Here goes libraries which are normally required under a different name
+var libs = { 
+    package: path.resolve(process.cwd(), 'package.json'), 
+    _: 'lodash', be: 'be-async' 
+};
+
+// Command-line arguments
+var program = require('commander') 
+  .version('0.0.1')
+  .usage('[options] "commands"')
+  .option('-p, --pretty', 'pretty print JSON output') 
+  .option('-j, --json', 'interpret input as json') 
+  .option('-i, --input', 'map through each input line as `i`') 
+  .option('-l, --list', 'expose all input lines as `l`') 
+  .option('-r, --reduce [init]', 'perform reduce instead of map, accumulator on `a`') 
+  .option('-f, --filter', 'return input if predicate returns true') 
+  .option('-s, --string', 'print current object\'s toString()') 
+  .option('-c, --complete [word]', 'return completions for input (used by shells)') 
+  .parse(process.argv);
+
+// Auto-completion and package browsing
+// Load in current shell: source <(sx --complete)
+// Save for next sessions:
+//  - zsh: "source <(sx --complete)" >> ~/.zshrc 
+//  - bash: "source <(sx --complete)" >> ~/.bashrc 
+if (program.complete && typeof program.complete === 'string'){ 
+    if (program.complete.lastIndexOf('.') !== -1){
+        var completion;
+        if (completion = program.complete.match(/([a-z_\.$][a-z0-9_\.$]*)\.?$/i)){
+            var parts = completion[1].split('.');
+            var name = parts.shift();
+            var library = name in context ? context[name] : tryRequire(name);
+            var list = function(prefix, library){
+                console.log(Object.keys(library).map(function(key){
+                    return prefix + "." + key;
+                }).join('\n'));
+            };
+            if (library){
+                if (parts.length){
+                    while (parts.length && Object.keys(library).indexOf(parts[0]) !== -1)
+                        library = library[parts.shift()];
+                    var nameSpace = completion[1].split('.');
+                    if (parts.length) nameSpace = nameSpace.slice(0, -1);
+                    list(nameSpace.join('.'), library);
+                } else list(name, library);
+            } 
+        }
+    } else console.log(modules.join('\n'));
+    process.exit(0);
+} else if (program.complete){
+    var script = path.resolve(__dirname, "completion.sh");
+    console.log(require('fs').readFileSync(script, 'utf-8'));
+    process.exit(0);
+}
+
+
+// Auto-return and expose context
+var stree = parser.parse(program.args.join(' '));
+if (stree.elements.length){
+    stree.elements.splice(stree.elements.length-1, 1, 
+        { "type": "ReturnStatement", value: stree.elements.slice(-1)[0] });
+    stree.elements = [{ 
+        "type": "WithStatement", "environment": { "type": "Variable", "name": "self" },
+                "statement": { "type": "Block", "statements": stree.elements }}];
+    program.args = compile(stree);
+}
+
+// Manage end of piped input
+process.stdout.on('error', function(err) {
+    if (err.code === 'EPIPE') process.exit(0);
+    throw err;
+}); 
+
+// Use readline to read input line by line
+var rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: false
+});
+
+// Check if we're reading input
+if (program.input) {
+    rl.on('line', maybeJson);
+} else if (program.list) {
+    var lines = []; 
+    rl.on('line', lines.push.bind(lines)); 
+    rl.on('close', maybeJson.bind(null, null, lines));
+} else {
+    rl.close();
+    run(null, null, null, print);
+}
+
+// May parse JSON from inputs
+function maybeJson(input, lines) {
+    if (program.input && program.list) {
+        if (program.reduce){
+            var acc = program.reduce !== true ? JSON.parse(program.reduce) : "";
+            if (program.json) print(JSON.parse(input).reduce(function(acc, input){
+                return run(input, null, acc);
+            }, acc), input, lines, acc);
+            else print(input.split('').reduce(function(acc, char){
+                return run(char, null, acc);
+            }, acc), input, lines, acc);
+        } else {
+            if (program.json) print(JSON.parse(input).map(function(input){
+                return run(input, null, null);
+            }), input, lines, acc);
+            else print(input.split('').map(function(char){
+                return run(char, null, null);
+            }), input, lines, acc);
+        }
+    } else if (program.input) {
+        run(program.json ? JSON.parse(input) : input, null, null, print);
+    } else if (program.list) {
+        if (program.json) lines = lines.map(function(line){
+            return JSON.parse(line);
+        });
+        run(null, lines, null, print);
+    }
+}
+
+// Fetches a missing name from an error stack
+function getMissingName(stack) {
+    var line = stack.split('\n')[1];
+    var column = line.match(/<anonymous>:\d+:(\d+)\)$/)[1];
+    var name = program.args.substring(column - 1);
+    return name.match(/^[a-z0-9\_]+/i)[0];
+}
+
+// Tries requiring a missing name
+function tryRequire(name, fail) {
+    try {
+        if (name in libs) {
+            name = libs[name];
+        }
+        return require(name);
+    } catch (err) {
+        if (fail) fail(name);
+    }
+}
+
+function run(input, lines, acc, fn) {
+    try {
+        var cmd = Function('i, l, a, self', program.args);
+        var result = cmd(input, lines, acc, context);
+        if (fn) return fn(result, input, lines, acc);
+        return result;
+    } catch (err) {
+        if (err.type === 'not_defined') {
+            var name = getMissingName(err.stack);
+            context[name] = tryRequire(name, function(name) {
+                console.error('error: couldn\'t load "' + name + '"');
+                process.exit(1);
+            }); 
+            run(input, lines, acc, fn);
+        }
+    }
+}
+
+// Execute the commands
+function print(result, input, lines, acc) { 
+    var args = [].slice.call(arguments, 1);
+    if (program.string) {
+        result = "// vim: filetype=javascript\n" + result.toString();
+    } 
+    if (typeof result === 'function') {
+        if (program.reduce) {
+            result = result(acc);
+        } else if (program.input) {
+            result = result(input);
+        } else if (program.list) {
+            result = result(list);
+        }
+    }
+    if (program.filter) { 
+        if (result) result = input;
+        else result = undefined;
+    }
+    try { 
+        if (typeof result === 'object') {
+            if (program.pretty) {
+                result = JSON.stringify(result, null, 4);
+            } else result = JSON.stringify(result, null, 0);
+        }
+    } finally { 
+        if (result !== undefined) {
+            console.log(result);
+        }
+    } 
+};
