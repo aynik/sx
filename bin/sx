@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 var readline = require('readline');
 var path = require('path');
-var modules = require('./modules');
-var parser = require('./parser');
-var compile = require('./compiler');
+var parser = require('../lib/parser');
+var compile = require('../lib/compiler');
+
+var modules = ["child_process", "cluster", "console", "crypto", "dns", "domain", "events", "fs", "http", "https", "net", "os", "path", "punycode", "querystring", "readline", "repl", "stream", "url", "util", "vm"];
 
 var context = {};
 for (var name in global) context[name] = global[name];
@@ -56,7 +57,7 @@ if ('complete' in program){
     } else console.log(modules.join('\n'));
     process.exit(0);
 } else if (program.completion){
-    var script = path.resolve(__dirname, "completion.sh");
+    var script = path.resolve(__dirname, "../lib/completion.sh");
     console.log(require('fs').readFileSync(script, 'utf-8'));
     process.exit(0);
 }
