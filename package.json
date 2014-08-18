@@ -29,6 +29,6 @@
     "tape": ">=2.13.4"
   },
   "scripts": {
-    "test": "tape test.js"
+    "test": "tape test/*"
   }
 }
