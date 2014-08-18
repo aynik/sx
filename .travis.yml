@@ -1,0 +1,9 @@
+language: node_js
+node_js:
+  - "0.10"
+deploy:
+    provider: npm
+    email: "aynik26@gmail.com"
+    api_key: "YXluaWs6MmVPcld4cjY5U2xYNkRBdTdYT3NMMTE4dzY="
+    on:
+        branch: master
