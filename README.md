@@ -70,6 +70,7 @@ $ sx [options] "commands"
 * [`--input, -i`](#input)
 * [`--list, -l`](#list)
 * [`--reduce [memo], -r [memo]`](#reduce)
+* [`--async, -a`](#async)
 * [`--filter, -f`](#filter)
 * [`--string, -s`](#string)
 
@@ -77,6 +78,14 @@ $ sx [options] "commands"
 
 * [`-jil, --json --input --list`](#json-input-list)
 * [`-jilr [memo], --json --input --list --reduce [memo]`](#json-input-list-reduce)
+
+### Practical examples
+
+* [`Express static server`](#express-static-server)
+
+---
+
+## Options
 
 <a name="pretty" />
 ### sx --pretty | -p 
@@ -113,7 +122,7 @@ Berlin
 <a name="input" />
 ### sx --input | -i
 
-Starts accepting input thorugh stdin, and exposes each line as `i`.
+Starts accepting input trough stdin, and exposes each line as `i`.
 
 __Examples__
 
@@ -159,6 +168,21 @@ $ find . -type f -exec stat -f '%z' {} \; | sx -jl l | sx -jilr 0 "a+(i/1024)" |
 1004.939453125kb
 ```
 
+<a name="async" />
+### sx --async | -a
+
+Expects an asynchronous result, code must pass result to print callback exposed as `a`.
+
+__Examples__
+
+#### Echoes all incoming random bytes
+
+```shell
+$ /dev/urandom | sx -a "process.stdin.on('data', a); process.stdin.resume()" 
+
+...
+```
+
 <a name="filter" />
 ### sx --filter | -f
 
@@ -192,8 +216,59 @@ function (requestListener) {
 }
 ```
 
+## Combos
+
 <a name="json-input-list" />
 ### sx --json --input --list | -jil
 
 Accepts JSON input, treating it as a list.
+
+__Examples__
+
+#### Get all even numbers in a given range
+
+```shell
+$ sx '_.range(8)' | sx -jilf i%2==0
+
+0
+2
+4
+6
+```
+
+<a name="json-input-list-reduce" />
+### sx --json --input --list --reduce [memo] | -jilr [memo]
+
+Accepts JSON input, treating it as a list and performing reduction on it.
+
+__Examples__
+
+#### Sum all numbers for a given range
+
+```shell
+$ sx '_.range(4)' | sx -jilr 0 a+i
+
+6
+```
+
+## More examples
+
+#### Express static server
+
+```shell
+$ npm install -g express
+$ sx 'express.call().use(express.static("./")).listen(3000); "http://localhost:3000"'
+
+http://localhost:3000
+```
+
+#### HTTP GET with request
+
+```shell
+$ npm install -g request
+$ sx -a 'request.call(0, "http://google.com", function(err, resp, body){ a(body) })'
+
+...
+```
+
 

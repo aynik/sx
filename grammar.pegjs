@@ -1123,7 +1123,6 @@ Statement
   / BreakStatement
   / ReturnStatement
   / WithStatement
-  / LabelledStatement
   / SwitchStatement
   / ThrowStatement
   / TryStatement
@@ -1387,15 +1386,6 @@ DefaultClause
       return {
         type:       "DefaultClause",
         statements: statements !== "" ? statements[1] : []
-      };
-    }
-
-LabelledStatement
-  = label:Identifier __ ":" __ statement:Statement {
-      return {
-        type:      "LabelledStatement",
-        label:     label,
-        statement: statement
       };
     }
 
