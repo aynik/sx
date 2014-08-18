@@ -19,19 +19,19 @@ Auto-completion is provided as a script for bash and zsh.
 Test in current shell:
 
 ```shell
-$ source <(sx --complete)
+$ source <(sx --completion)
 ```
 
 Install (bash):
 
 ```shell
-$ echo "source <(sx --complete)" >> ~/.bashrc
+$ echo "source <(sx --completion)" >> ~/.bashrc
 ```
 
 Install (zsh):
 
 ```shell
-$ echo "source <(sx --complete)" >> ~/.zshrc
+$ echo "source <(sx --completion)" >> ~/.zshrc
 ```
 
 Usage (core):

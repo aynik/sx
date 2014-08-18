@@ -27,14 +27,11 @@ var program = require('commander')
   .option('-f, --filter', 'return input if predicate returns true') 
   .option('-s, --string', 'print current object\'s toString()') 
   .option('-c, --complete [word]', 'return completions for input (used by shells)') 
+  .option('-C, --completion', 'return completion script') 
   .parse(process.argv);
 
 // Auto-completion and package browsing
-// Load in current shell: source <(sx --complete)
-// Save for next sessions:
-//  - zsh: "source <(sx --complete)" >> ~/.zshrc 
-//  - bash: "source <(sx --complete)" >> ~/.bashrc 
-if (program.complete && typeof program.complete === 'string'){ 
+if ('complete' in program){ 
     if (program.complete.lastIndexOf('.') !== -1){
         var completion;
         if (completion = program.complete.match(/([a-z_\.$][a-z0-9_\.$]*)\.?$/i)){
@@ -58,7 +55,7 @@ if (program.complete && typeof program.complete === 'string'){
         }
     } else console.log(modules.join('\n'));
     process.exit(0);
-} else if (program.complete){
+} else if (program.completion){
     var script = path.resolve(__dirname, "completion.sh");
     console.log(require('fs').readFileSync(script, 'utf-8'));
     process.exit(0);
