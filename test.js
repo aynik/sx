@@ -11,9 +11,9 @@ var testOut = function(t, success){
 };
 
 test("Should run all tests", function(t){ 
-    t.test("sx --complete", function(t){
+    t.test("sx --completion", function(t){
         t.plan(3);
-        exec('./sx --complete', testOut(t, function(stdout){
+        exec('./sx --completion', testOut(t, function(stdout){
             t.same(fs.readFileSync('./completion.sh', 'utf-8'), stdout);
         }));
     });
@@ -41,14 +41,14 @@ test("Should run all tests", function(t){
 
     t.test("sx --list", function(t){
         t.plan(3);
-        exec('for n in {1..3}; do echo $n; done | ./sx -l "l[1]"', testOut(t, function(stdout){
+        exec('for n in 1 2 3; do echo $n; done | ./sx -l "l[1]"', testOut(t, function(stdout){
             t.same("2", stdout);
         }));
     });
 
     t.test("sx --reduce", function(t){
         t.plan(3);
-        exec('for n in {1..3}; do echo $n; done | ./sx -lir 0 +i+r', testOut(t, function(stdout){
+        exec('for n in 1 2 3; do echo $n; done | ./sx -lir 0 +i+r', testOut(t, function(stdout){
             t.same("6", stdout);
         }));
     });
