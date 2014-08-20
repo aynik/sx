@@ -8,13 +8,35 @@ var modules = ["child_process", "cluster", "console", "crypto", "dns",
     "domain", "events", "fs", "http", "https", "net", "os", "path", "punycode", 
     "querystring", "readline", "repl", "stream", "url", "util", "vm"];
 
-var context = { 
-    require: require('module').prototype.require, // hack to require from cwd()
-    process: process, global: global
-};
-
 // Here goes libraries which are normally required under a different name
 var libs = { _: 'lodash', be: 'be-async' };
+
+// Hack to require from cwd()
+var lrequire = require('module').prototype.require;
+
+// Tries to call arguments from a list of functions
+function tryCall(fn){
+    try {
+        if (arguments.length >= 2){
+            return fn.apply(null, arguments[arguments.length-1]);
+        }
+    } catch (e) {
+        return tryCall.apply(null, [].slice.call(arguments, 1)); 
+    }
+}
+
+// Failover require
+function frequire(name, fail) {
+    if (name in libs) {
+        name = libs[name];
+    }
+    var loaded = tryCall(lrequire, require, [name]);
+    if (!loaded && fail) return fail(name);
+    return loaded;
+}
+
+// Context exposed to program
+var context = { require: frequire, process: process, global: global };
 
 // Command-line arguments
 var program = require('commander') 
@@ -40,7 +62,7 @@ if ('complete' in program){
         if (completion = program.complete.match(/([a-z_\.$][a-z0-9_\.$]*)\.?$/i)){
             var parts = completion[1].split('.');
             var name = parts.shift();
-            var library = name in context ? context[name] : tryRequire(name);
+            var library = name in context ? context[name] : frequire(name);
             var list = function(prefix, library){
                 console.log(Object.keys(library).map(function(key){
                     return prefix + "." + key;
@@ -160,18 +182,6 @@ function getMissingName(stack) {
     return name.match(/^[a-z0-9\_]+/i)[0];
 }
 
-// Tries requiring a missing name
-function tryRequire(name, fail) {
-    try {
-        if (name in libs) {
-            name = libs[name];
-        }
-        return require(name);
-    } catch (err) {
-        if (fail) fail(name);
-    }
-}
-
 function run(input, lines, acc, fn) {
     try {
         var cmd = Function('i, l, r, a, self', program.args);
@@ -183,7 +193,7 @@ function run(input, lines, acc, fn) {
     } catch (err) {
         if (err.type === 'not_defined') {
             var name = getMissingName(err.stack);
-            context[name] = tryRequire(name, function(name) {
+            context[name] = frequire(name, function(name) {
                 console.error('error: couldn\'t load "' + name + '"');
                 process.exit(1);
             }); 
