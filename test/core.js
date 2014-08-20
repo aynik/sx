@@ -20,14 +20,14 @@ test("Should run all tests", function(t){
 
     t.test("sx --pretty", function(t){
         t.plan(3);
-        exec('./bin/sx -p "({a:1})"', testOut(t, function(stdout){
+        exec('./bin/sx -p "{a:1}"', testOut(t, function(stdout){
             t.same("{\n    \"a\": 1\n}", stdout);
         }));
     });
 
     t.test("sx --json", function(t){
         t.plan(3);
-        exec('./bin/sx "({a:\'b\'})" | ./bin/sx -ji i.a', testOut(t, function(stdout){
+        exec('./bin/sx "{a:\'b\'}" | ./bin/sx -ji i.a', testOut(t, function(stdout){
             t.same("b", stdout);
         }));
     });

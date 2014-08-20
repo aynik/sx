@@ -97,7 +97,7 @@ __Examples__
 #### An introductory hello world
 
 ```shell
-$ sx -p "({hello:'world'})"
+$ sx -p "{hello:'world'}"
 
 {
     "hello": "world"
