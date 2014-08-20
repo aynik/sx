@@ -4,27 +4,29 @@ var path = require('path');
 var parser = require('../lib/parser');
 var compile = require('../lib/compiler');
 
-var modules = ["child_process", "cluster", "console", "crypto", "dns", "domain", "events", "fs", "http", "https", "net", "os", "path", "punycode", "querystring", "readline", "repl", "stream", "url", "util", "vm"];
+var modules = ["child_process", "cluster", "console", "crypto", "dns", 
+    "domain", "events", "fs", "http", "https", "net", "os", "path", "punycode", 
+    "querystring", "readline", "repl", "stream", "url", "util", "vm"];
 
 var context = {};
 for (var name in global) context[name] = global[name];
 
 // Here goes libraries which are normally required under a different name
 var libs = { 
-    package: path.resolve(process.cwd(), 'package.json'), 
+    package: path.resolve(process.cwd(), 'package.json'), // loads package in cwd()
     _: 'lodash', be: 'be-async' 
 };
 
 // Command-line arguments
 var program = require('commander') 
-  .version('0.0.1')
+  .version(require('../package').version)
   .usage('[options] "commands"')
   .option('-p, --pretty', 'pretty print JSON output') 
   .option('-j, --json', 'interpret input as json') 
   .option('-i, --input', 'map through each input line as `i`') 
   .option('-l, --list', 'expose all input lines as `l`') 
   .option('-r, --reduce [init]', 'perform reduce instead of map, accumulator on `r`') 
-  .option('-a, --async', 'expect an asynchronous response, use callback exposed as `n`') 
+  .option('-a, --async', 'expect an asynchronous response, use callback exposed as `a`') 
   .option('-f, --filter', 'return input if predicate returns true') 
   .option('-s, --string', 'print current object\'s toString()') 
   .option('-c, --complete [word]', 'return completions for input (used by shells)') 
