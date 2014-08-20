@@ -12,7 +12,7 @@
     "plugin"
   ],
   "author": "aynik",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "preferGlobal": true,
   "repository": {
     "type": "git",

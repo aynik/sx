@@ -29,7 +29,8 @@ var program = require('commander')
   .option('-f, --filter', 'return input if predicate returns true') 
   .option('-s, --string', 'print current object\'s toString()') 
   .option('-c, --complete [word]', 'return completions for input (used by shells)') 
-  .option('-C, --completion', 'return completion script') 
+  .option('-C, --completion', 'return completion script (bash & zsh)') 
+  .option('-E, --escaping', 'return auto-escaping script (zsh)') 
   .parse(process.argv);
 
 // Auto-completion and package browsing
@@ -57,8 +58,16 @@ if ('complete' in program){
         }
     } else console.log(modules.join('\n'));
     process.exit(0);
-} else if (program.completion){
+}
+
+if (program.completion){
     var script = path.resolve(__dirname, "../lib/completion.sh");
+    console.log(require('fs').readFileSync(script, 'utf-8'));
+    process.exit(0);
+}
+
+if (program.escaping){
+    var script = path.resolve(__dirname, "../lib/escaping.sh");
     console.log(require('fs').readFileSync(script, 'utf-8'));
     process.exit(0);
 }

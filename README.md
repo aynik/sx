@@ -8,7 +8,7 @@ Pull requests are very welcome!
 
 ## Install 
 
-```shell
+```zsh
 $ npm install -g sx
 ```
 
@@ -16,37 +16,67 @@ $ npm install -g sx
 
 Auto-completion is provided as a script for bash and zsh.
 
-Test in current shell:
+Test in current zsh:
 
-```shell
+```zsh
 $ source <(sx --completion)
 ```
 
 Install (bash):
 
-```shell
+```zsh
 $ echo "source <(sx --completion)" >> ~/.bashrc
 ```
 
 Install (zsh):
 
-```shell
+```zsh
 $ echo "source <(sx --completion)" >> ~/.zshrc
 ```
 
 Usage (core):
 
-```shell
+```zsh
 $ sx fs.<tab>
 $ sx h<tab>
 ```
 
 Usage (external module):
 
-```shell
+```zsh
 $ npm install -g lodash
 $ sx _.<tab>
 ```
+
+## Load auto-escaping
+
+Auto-escaping is provided as a function for zsh.
+
+Install:
+
+- First you'll have to find what are your zsh function paths.
+
+```zsh
+$ echo $fpath
+
+/usr/share/zsh/site-functions /usr/share/zsh/5.0.2/functions
+```
+
+Then chose the first of them, and install the script (you may need root permissions):
+
+```zsh
+$ sudo sx --escaping > /usr/share/zsh/site-functions/sx-escape-magic
+```
+
+And add to your `.zshrc` an autoload command: 
+
+```zsh
+$ echo "autoload -Uz sx-escape-magic" >> ~/.zshrc
+$ echo "sx-escape-magic" >> ~/.zshrc
+```
+
+Now when you restart your shell you should be able to write javascript 
+code and special characters will be automatically escaped.
 
 ## Features
 
@@ -59,7 +89,7 @@ $ sx _.<tab>
 
 ### Usage
 
-```shell
+```zsh
 $ sx [options] "commands"
 ```
 
@@ -96,7 +126,7 @@ __Examples__
 
 #### An introductory hello world
 
-```shell
+```zsh
 $ sx -p "{hello:'world'}"
 
 {
@@ -113,7 +143,7 @@ __Examples__
 
 #### Fetches geoip data and prints user's city
 
-```shell
+```zsh
 $ curl -sL http://freegeoip.net/json | sx -ji i.city
 
 Berlin
@@ -128,7 +158,7 @@ __Examples__
 
 #### Prints all user's processes pids
 
-```shell
+```zsh
 $ ps | sx -i 'i.match(/\d+/)[0]'
 
 337
@@ -147,7 +177,7 @@ __Examples__
 
 #### Counts all matching occurrences
 
-```shell
+```zsh
 grep "console.log" * | sx -l l.length
 
 5
@@ -162,7 +192,7 @@ __Examples__
 
 #### Sums all file sizes recursively from the current directory
 
-```shell
+```zsh
 $ find . -type f -exec stat -f '%z' {} \; | sx -jl l | sx -jilr 0 "a+(i/1024)" | sx -i "i+'kb'"
 
 1004.939453125kb
@@ -177,7 +207,7 @@ __Examples__
 
 #### Echoes all incoming random bytes
 
-```shell
+```zsh
 $ /dev/urandom | sx -a "process.stdin.on('data', a); process.stdin.resume()" 
 
 ...
@@ -192,7 +222,7 @@ __Examples__
 
 #### Returns only javascript files
 
-```shell
+```zsh
 ls | sx -fi "path.extname(i) === '.js'"
 
 jayscript.js
@@ -207,7 +237,7 @@ __Examples__
 
 #### Inspects http.createServer
 
-```shell
+```zsh
 $ sx -s http.createServer
 
 // vim: filetype=javascript
@@ -227,7 +257,7 @@ __Examples__
 
 #### Get all even numbers in a given range
 
-```shell
+```zsh
 $ sx '_.range(8)' | sx -jilf i%2==0
 
 0
@@ -245,7 +275,7 @@ __Examples__
 
 #### Sum all numbers for a given range
 
-```shell
+```zsh
 $ sx '_.range(4)' | sx -jilr 0 a+i
 
 6
@@ -255,7 +285,7 @@ $ sx '_.range(4)' | sx -jilr 0 a+i
 
 #### Express static server
 
-```shell
+```zsh
 $ npm install -g express
 $ sx 'express.call().use(express.static("./")).listen(3000); "http://localhost:3000"'
 
@@ -264,7 +294,7 @@ http://localhost:3000
 
 #### HTTP GET with request
 
-```shell
+```zsh
 $ npm install -g request
 $ sx -a 'request.call(0, "http://google.com", function(err, resp, body){ a(body) })'
 
