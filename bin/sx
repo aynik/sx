@@ -8,14 +8,13 @@ var modules = ["child_process", "cluster", "console", "crypto", "dns",
     "domain", "events", "fs", "http", "https", "net", "os", "path", "punycode", 
     "querystring", "readline", "repl", "stream", "url", "util", "vm"];
 
-var context = {};
-for (var name in global) context[name] = global[name];
+var context = { 
+    require: require('module').prototype.require, // hack to require from cwd()
+    process: process, global: global
+};
 
 // Here goes libraries which are normally required under a different name
-var libs = { 
-    package: path.resolve(process.cwd(), 'package.json'), // loads package in cwd()
-    _: 'lodash', be: 'be-async' 
-};
+var libs = { _: 'lodash', be: 'be-async' };
 
 // Command-line arguments
 var program = require('commander') 
@@ -180,11 +179,13 @@ function run(input, lines, acc, fn) {
                 process.exit(1);
             }); 
             run(input, lines, acc, fn);
+        } else {
+            throw err;
         }
     }
 }
 
-// Execute the commands
+// Prints results
 function print(result, input, lines, acc) { 
     var args = [].slice.call(arguments, 1);
     if (program.string) {

@@ -5,15 +5,14 @@
     "sx",
     "command-line",
     "cli",
-    "swiss",
-    "army knife",
+    "swiss army knife",
     "tool",
     "multi-purpose",
     "pipe",
     "plugin"
   ],
   "author": "aynik",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "repository": {
     "type": "git",
     "url": "https://github.com/aynik/sx.git"
