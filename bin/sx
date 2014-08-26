@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 var readline = require('readline');
 var path = require('path');
+var fs = require('fs');
 var parser = require('../lib/parser');
 var compile = require('../lib/compiler');
 
@@ -44,12 +45,15 @@ var program = require('commander')
   .usage('[options] "commands"')
   .option('-p, --pretty', 'pretty print JSON output') 
   .option('-j, --json', 'interpret input as json') 
-  .option('-i, --input', 'map through each input line as `i`') 
+  .option('-x, --line', 'expose each input line as `x`') 
+  .option('-b, --buffer', 'expose all input as `b`') 
   .option('-l, --list', 'expose all input lines as `l`') 
-  .option('-r, --reduce [init]', 'perform reduce instead of map, accumulator on `r`') 
-  .option('-a, --async', 'expect an asynchronous response, use callback exposed as `a`') 
-  .option('-f, --filter', 'return input if predicate returns true') 
+  .option('-a, --async', 'expect asynchronous output, callback is `a`') 
+  .option('-f, --filter', 'input passes if predicate returns true') 
   .option('-s, --string', 'print current object\'s toString()') 
+  .option('-i, --infile [file]', 'read from file instead of stdin')
+  .option('-o, --outfile [file]', 'write to file instead of stdout')
+  .option('-F, --file [file]', 'read from and write to file instead of stdin and stdout')
   .option('-c, --complete [word]', 'return completions for input (used by shells)') 
   .option('-C, --completion', 'return completion script (bash & zsh)') 
   .option('-E, --escaping', 'return auto-escaping script (zsh)') 
@@ -84,13 +88,13 @@ if ('complete' in program){
 
 if (program.completion){
     var script = path.resolve(__dirname, "../lib/completion.sh");
-    console.log(require('fs').readFileSync(script, 'utf-8'));
+    console.log(fs.readFileSync(script, 'utf-8'));
     process.exit(0);
 }
 
 if (program.escaping){
     var script = path.resolve(__dirname, "../lib/escaping.sh");
-    console.log(require('fs').readFileSync(script, 'utf-8'));
+    console.log(fs.readFileSync(script, 'utf-8'));
     process.exit(0);
 }
 
@@ -110,7 +114,7 @@ if (stree.elements && stree.elements.length){
     if (!program.async) stree.elements.splice(stree.elements.length-1, 1, 
         { "type": "ReturnStatement", value: stree.elements.slice(-1)[0] });
     stree.elements = [{ 
-        "type": "WithStatement", "environment": { "type": "Variable", "name": "self" },
+        "type": "WithStatement", "environment": { "type": "Variable", "name": "global" },
                 "statement": { "type": "Block", "statements": stree.elements }}];
     try {
         program.args = compile(stree);
@@ -126,51 +130,60 @@ process.stdout.on('error', function(err) {
     throw err;
 }); 
 
-// Use readline to read input line by line
-var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-});
-
-// Check if we're reading input
-if (program.list) {
-    var lines = []; 
-    rl.on('line', lines.push.bind(lines)); 
-    rl.on('close', maybeJson.bind(null, null, lines));
-} else if (program.input) {
-    rl.on('line', maybeJson);
-} else {
-    rl.close();
-    run(null, null, null, print);
+// Check what kind of input we're reading
+if (program.infile || program.file){
+    var input = fs.readFileSync(program.infile || program.file, 'utf-8');
+    if ((program.outfile || program.file) && (program.async || program.line)){
+        fs.writeFileSync(program.outfile || program.file, '');
+    }
+    if (program.buffer || program.list) {
+        maybeJson(null, program.buffer && input, program.list && input.split('\n'));
+    } else if (program.line) {
+        maybeJson(input, null);
+    } else {
+        run(null, null, null, print);
+    }
+} else{
+    // Use readline to read input line by line
+    var rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: false
+    });
+    if (program.buffer || program.list){
+        var lines = []; 
+        rl.on('line', lines.push.bind(lines)); 
+        rl.on('close', function(){
+            maybeJson(null, 
+                program.buffer && lines.join('\n'), 
+                program.list && lines);
+        });
+    } else if (program.line) {
+        rl.on('line', maybeJson);
+    } else {
+        rl.close();
+        run(null, null, null, print);
+    }
 }
 
 // May parse JSON from inputs
-function maybeJson(input, lines) {
-    if (program.input && program.list) {
-        if (program.reduce){
-            var acc = program.reduce !== true ? JSON.parse(program.reduce) : "";
-            if (program.json) print(JSON.parse(lines.join('')).reduce(function(acc, input){
-                return run(input, null, acc);
-            }, acc), input, lines, acc);
-            else print(lines.reduce(function(acc, char){
-                return run(char, null, acc);
-            }, acc), input, lines, acc);
-        } else {
-            if (program.json) JSON.parse(input).map(function(input){
-                run(input, null, null, print);
-            });
-            else input.split('').map(function(char){
-                run(char, null, null, print);
-            });
-        }
-    } else if (program.input) {
-        run(program.json ? JSON.parse(input) : input, null, null, print);
+function maybeJson(line, buffer, lines) {
+    if (program.buffer) {
+        run(null, program.json ? JSON.parse(buffer) : buffer, null, print);
+    } else if (program.line && program.list) {
+        if (program.json) JSON.parse(lines.join('')).map(function(_line){
+            run(_line, null, line, print);
+        });
+        else lines.map(function(char){
+            run(char, null, line, print);
+        });
+    } else if (program.line) {
+        run(program.json ? JSON.parse(line) : line, null, null, print);
     } else if (program.list) {
         if (program.json) lines = lines.map(function(line){
             return JSON.parse(line);
         });
-        run(null, lines, null, print);
+        run(null, null, lines, print);
     }
 }
 
@@ -182,12 +195,13 @@ function getMissingName(stack) {
     return name.match(/^[a-z0-9\_]+/i)[0];
 }
 
-function run(input, lines, acc, fn) {
+// Executes the code
+function run(line, buffer, lines, fn) {
     try {
-        var cmd = Function('i, l, r, a, self', program.args);
-        var result = cmd(input, lines, acc, fn, context);
+        var cmd = Function('x, b, l, a, global', program.args);
+        var result = cmd(line, buffer, lines, fn, context);
         if (!program.async){
-            if (fn) return fn(result, input, lines, acc);
+            if (fn) return fn(result, line, lines);
             return result;
         }
     } catch (err) {
@@ -197,7 +211,7 @@ function run(input, lines, acc, fn) {
                 console.error('error: couldn\'t load "' + name + '"');
                 process.exit(1);
             }); 
-            run(input, lines, acc, fn);
+            run(line, buffer, lines, fn);
         } else {
             throw err;
         }
@@ -205,22 +219,20 @@ function run(input, lines, acc, fn) {
 }
 
 // Prints results
-function print(result, input, lines, acc) { 
+function print(result, line, lines) { 
     var args = [].slice.call(arguments, 1);
     if (program.string) {
         result = "// vim: filetype=javascript\n" + result.toString();
     } 
     if (typeof result === 'function') {
-        if (program.reduce) {
-            result = result(acc);
-        } else if (program.input) {
-            result = result(input);
+        if (program.line) {
+            result = result(line);
         } else if (program.list) {
             result = result(list);
         }
     }
     if (program.filter) { 
-        if (result) result = input;
+        if (result) result = line;
         else result = undefined;
     }
     try { 
@@ -231,7 +243,15 @@ function print(result, input, lines, acc) {
         }
     } finally { 
         if (result !== undefined) {
-            console.log(result);
+            if (program.outfile || program.file){
+                if (program.async || program.line){
+                    fs.appendFileSync(program.outfile || program.file, result, 'utf-8');
+                } else {
+                    fs.writeFileSync(program.outfile || program.file, result, 'utf-8');
+                }
+            } else {
+                console.log(result);
+            }
         }
     } 
 };

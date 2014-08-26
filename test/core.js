@@ -27,14 +27,14 @@ test("Should run all tests", function(t){
 
     t.test("sx --json", function(t){
         t.plan(3);
-        exec('./bin/sx "{a:\'b\'}" | ./bin/sx -ji i.a', testOut(t, function(stdout){
+        exec('./bin/sx "{a:\'b\'}" | ./bin/sx -jx "x.a"', testOut(t, function(stdout){
             t.same("b", stdout);
         }));
     });
 
-    t.test("sx --input", function(t){
+    t.test("sx --line", function(t){
         t.plan(3);
-        exec('./bin/sx 3 | ./bin/sx -i +i+5', testOut(t, function(stdout){
+        exec('./bin/sx 3 | ./bin/sx -x "+x+5"', testOut(t, function(stdout){
             t.same("8", stdout);
         }));
     });
@@ -43,13 +43,6 @@ test("Should run all tests", function(t){
         t.plan(3);
         exec('for n in 1 2 3; do echo $n; done | ./bin/sx -l "l[1]"', testOut(t, function(stdout){
             t.same("2", stdout);
-        }));
-    });
-
-    t.test("sx --reduce", function(t){
-        t.plan(3);
-        exec('for n in 1 2 3; do echo $n; done | ./bin/sx -lir 0 +i+r', testOut(t, function(stdout){
-            t.same("6", stdout);
         }));
     });
 
@@ -62,7 +55,7 @@ test("Should run all tests", function(t){
 
     t.test("sx --filter", function(t){
         t.plan(3);
-        exec('./bin/sx 1 | ./bin/sx -fi i==1', testOut(t, function(stdout){
+        exec('./bin/sx 1 | ./bin/sx -fx "x==1"', testOut(t, function(stdout){
             t.same("1", stdout);
         }));
     });
@@ -71,6 +64,27 @@ test("Should run all tests", function(t){
         t.plan(3);
         exec('./bin/sx -s "Function()"', testOut(t, function(stdout){
             t.same("// vim: filetype=javascript\nfunction anonymous() {\n\n}", stdout);
+        }));
+    });
+
+    t.test("sx --infile", function(t){
+        t.plan(3);
+        exec('./bin/sx -jbi package.json b.name', testOut(t, function(stdout){
+            t.same("sx", stdout);
+        }));
+    });
+
+    t.test("sx --outfile", function(t){
+        t.plan(3);
+        exec('./bin/sx -o .tmp 123 && echo $(cat .tmp)', testOut(t, function(stdout){
+            t.same("123", stdout);
+        }));
+    });
+
+    t.test("sx --file", function(t){
+        t.plan(3);
+        exec('./bin/sx -bF .tmp "(parseInt(b, 10) * 2)" && echo $(cat .tmp) && rm .tmp', testOut(t, function(stdout){
+            t.same("246", stdout);
         }));
     });
 });

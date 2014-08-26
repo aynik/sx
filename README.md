@@ -1,95 +1,29 @@
-# Sx (javascript's swiss army knife)
+# Sx
 
 [![Build Status via Travis CI](https://travis-ci.org/aynik/be.svg?branch=master)](https://travis-ci.org/aynik/sx)
 
-`Sx` is a command line utility which executes javascript code.
+`sx` is a command line utility which executes javascript code, mostly to process input and/or generate output.
 
 Pull requests are very welcome!
 
 ## Install 
 
-```zsh
+```bash
 $ npm install -g sx
 ```
-
-## Load auto-completion
-
-Auto-completion is provided as a script for bash and zsh.
-
-Test in current zsh:
-
-```zsh
-$ source <(sx --completion)
-```
-
-Install (bash):
-
-```zsh
-$ echo "source <(sx --completion)" >> ~/.bashrc
-```
-
-Install (zsh):
-
-```zsh
-$ echo "source <(sx --completion)" >> ~/.zshrc
-```
-
-Usage (core):
-
-```zsh
-$ sx fs.<tab>
-$ sx h<tab>
-```
-
-Usage (external module):
-
-```zsh
-$ npm install -g lodash
-$ sx _.<tab>
-```
-
-## Load auto-escaping
-
-Auto-escaping is provided as a function for zsh.
-
-Install:
-
-- First you'll have to find what are your zsh function paths.
-
-```zsh
-$ echo $fpath
-
-/usr/share/zsh/site-functions /usr/share/zsh/5.0.2/functions
-```
-
-Then chose the first of them, and install the script (you may need root permissions):
-
-```zsh
-$ sudo sx --escaping > /usr/share/zsh/site-functions/sx-escape-magic
-```
-
-And add to your `.zshrc` an autoload command: 
-
-```zsh
-$ echo "autoload -Uz sx-escape-magic" >> ~/.zshrc
-$ echo "sx-escape-magic" >> ~/.zshrc
-```
-
-Now when you restart your shell you should be able to write javascript 
-code and special characters will be automatically escaped.
 
 ## Features
 
 - Various input modes, including list and JSON input parsing.
-- Module auto-loading, not perfect but very handy for development or browsing.
-- Auto-completion scripts for bash and zsh, module discovery.
+- Standard and file I/O supported.
+- Many automations: module auto-loading, last value auto-return, auto-escaping for zsh and auto-completion both for zsh and bash.
 - Poor man's beautifier (JSON.stringify).
 
 ## Documentation
 
 ### Usage
 
-```zsh
+```bash
 $ sx [options] "commands"
 ```
 
@@ -97,21 +31,28 @@ $ sx [options] "commands"
 
 * [`--pretty, -p`](#pretty)
 * [`--json, -j`](#json)
-* [`--input, -i`](#input)
+* [`--line, -x`](#line)
 * [`--list, -l`](#list)
-* [`--reduce [memo], -r [memo]`](#reduce)
 * [`--async, -a`](#async)
 * [`--filter, -f`](#filter)
 * [`--string, -s`](#string)
+* [`--infile, -i [file]`](#infile)
+* [`--outfile, -o [file]`](#outfile)
+* [`--file, -F [file]`](#file)
 
 ### Combos
 
-* [`-jil, --json --input --list`](#json-input-list)
-* [`-jilr [memo], --json --input --list --reduce [memo]`](#json-input-list-reduce)
+* [`-jxl, --json --line --list`](#json-line-list)
 
-### Practical examples
+### More examples
 
 * [`Express static server`](#express-static-server)
+
+### Extras
+
+* [`Auto-completion`](#auto-completion)
+* [`Auto-escaping`](#auto-escaping)
+
 
 ---
 
@@ -126,13 +67,15 @@ __Examples__
 
 #### An introductory hello world
 
-```zsh
+```bash
 $ sx -p "{hello:'world'}"
 
 {
     "hello": "world"
 }
 ```
+
+---
 
 <a name="json" />
 ### sx --json | -j
@@ -143,23 +86,25 @@ __Examples__
 
 #### Fetches geoip data and prints user's city
 
-```zsh
-$ curl -sL http://freegeoip.net/json | sx -ji i.city
+```bash
+$ curl -sL http://freegeoip.net/json | sx -jx x.city
 
 Berlin
 ```
 
-<a name="input" />
-### sx --input | -i
+---
 
-Starts accepting input trough stdin, and exposes each line as `i`.
+<a name="line" />
+### sx --line | -x
+
+Starts accepting input trough stdin, and exposes each line as `x`.
 
 __Examples__
 
 #### Prints all user's processes pids
 
-```zsh
-$ ps | sx -i 'i.match(/\d+/)[0]'
+```bash
+$ ps | sx -x 'x.match(/\d+/)[0]'
 
 337
 345
@@ -167,6 +112,8 @@ $ ps | sx -i 'i.match(/\d+/)[0]'
 79235
 97048
 ```
+
+---
 
 <a name="list" />
 ### sx --list | -l
@@ -177,26 +124,13 @@ __Examples__
 
 #### Counts all matching occurrences
 
-```zsh
+```bash
 grep "console.log" * | sx -l l.length
 
 5
 ```
 
-<a name="reduce" />
-### sx --reduce [memo] | -r [memo]
-
-Performs reduce operations instead of map when used with combo `-il`.
-
-__Examples__
-
-#### Sums all file sizes recursively from the current directory
-
-```zsh
-$ find . -type f -exec stat -f '%z' {} \; | sx -jl l | sx -jilr 0 "a+(i/1024)" | sx -i "i+'kb'"
-
-1004.939453125kb
-```
+---
 
 <a name="async" />
 ### sx --async | -a
@@ -207,11 +141,13 @@ __Examples__
 
 #### Echoes all incoming random bytes
 
-```zsh
+```bash
 $ /dev/urandom | sx -a "process.stdin.on('data', a); process.stdin.resume()" 
 
 ...
 ```
+
+---
 
 <a name="filter" />
 ### sx --filter | -f
@@ -222,11 +158,13 @@ __Examples__
 
 #### Returns only javascript files
 
-```zsh
-ls | sx -fi "path.extname(i) === '.js'"
+```bash
+$ ls | sx -fx "path.extname(x) === '.js'"
 
 jayscript.js
 ```
+
+---
 
 <a name="string" />
 ### sx --string | -s
@@ -237,7 +175,7 @@ __Examples__
 
 #### Inspects http.createServer
 
-```zsh
+```bash
 $ sx -s http.createServer
 
 // vim: filetype=javascript
@@ -246,19 +184,73 @@ function (requestListener) {
 }
 ```
 
+---
+
+<a name="infile" />
+### sx --infile [file] | -i [file]
+
+Uses provided file as input instead of stdin.
+
+__Examples__
+
+#### Filters matching lines from file
+```bash
+$ sx -xlfi ~/.zshrc x.match\(/export PATH/\)
+
+node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+```
+
+---
+
+<a name="outfile" />
+### sx --outfile [file] | -o [file]
+
+Uses provided file as output instead of stdout.
+
+NOTE: Contents of output file will be wipped out preventively.
+
+__Examples__
+
+#### Saves input while writing stdout
+
+```bash
+$ tail -f /var/log/system.log | sx -xo local.log "console.log(x); x"
+
+...
+```
+
+---
+
+<a name="file" />
+### sx --file [file] | -F [file]
+
+Uses provided file as input instead of stdin and at the same time as output instead of stdout, could be used to mutate contents of files, writing to them after the contents are on memory.
+
+NOTE: Contents of output file will be wipped out preventively.
+
+__Examples__
+
+#### Replaces file contents in place
+
+```bash
+$ sx -bF Makefile "b.replace(/win32/i, 'darwin')"
+```
+
+---
+
 ## Combos
 
-<a name="json-input-list" />
-### sx --json --input --list | -jil
+<a name="line-list" />
+### sx --json --line --list | -jxl
 
-Accepts JSON input, treating it as a list.
+Accepts JSON input, treating it as a list and exposing each item.
 
 __Examples__
 
 #### Get all even numbers in a given range
 
-```zsh
-$ sx '_.range(8)' | sx -jilf i%2==0
+```bash
+$ sx '_.range(8)' | sx -jxlf x%2==0
 
 0
 2
@@ -266,26 +258,14 @@ $ sx '_.range(8)' | sx -jilf i%2==0
 6
 ```
 
-<a name="json-input-list-reduce" />
-### sx --json --input --list --reduce [memo] | -jilr [memo]
-
-Accepts JSON input, treating it as a list and performing reduction on it.
-
-__Examples__
-
-#### Sum all numbers for a given range
-
-```zsh
-$ sx '_.range(4)' | sx -jilr 0 a+i
-
-6
-```
+---
 
 ## More examples
 
+<a name="express-static-server" />
 #### Express static server
 
-```zsh
+```bash
 $ npm install -g express
 $ sx 'express.call().use(express.static("./")).listen(3000); "http://localhost:3000"'
 
@@ -294,11 +274,84 @@ http://localhost:3000
 
 #### HTTP GET with request
 
-```zsh
+```bash
 $ npm install -g request
 $ sx -a 'request.call(0, "http://google.com", function(err, resp, body){ a(body) })'
 
 ...
 ```
 
+---
+
+## Extras
+
+<a name="auto-completion" />
+### Auto-completion
+
+Auto-completion is provided as a script for bash and zsh.
+
+Test in current zsh:
+
+```bash
+$ source <(sx --completion)
+```
+
+Install (bash):
+
+```bash
+$ echo "source <(sx --completion)" >> ~/.bashrc
+```
+
+Install (zsh):
+
+```bash
+$ echo "source <(sx --completion)" >> ~/.zshrc
+```
+
+Usage (core):
+
+```bash
+$ sx fs.<tab>
+$ sx h<tab>
+```
+
+Usage (external module):
+
+```bash
+$ npm install -g lodash
+$ sx _.<tab>
+```
+
+---
+
+<a name="auto-escaping" />
+### Auto-escaping
+
+Auto-escaping is provided as a function for zsh.
+
+Install:
+
+- First you'll have to find what are your zsh function paths.
+
+```bash
+$ echo $fpath
+
+/usr/share/zsh/site-functions /usr/share/zsh/5.0.2/functions
+```
+
+Then chose the first of them, and install the script (you may need root permissions):
+
+```bash
+$ sudo sx --escaping > /usr/share/zsh/site-functions/sx-escape-magic
+```
+
+And add to your `.zshrc` an autoload command: 
+
+```bash
+$ echo "autoload -Uz sx-escape-magic" >> ~/.zshrc
+$ echo "sx-escape-magic" >> ~/.zshrc
+```
+
+Now when you restart your shell you should be able to write javascript 
+code and special characters will be automatically escaped.
 
