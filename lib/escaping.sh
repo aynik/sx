@@ -13,7 +13,7 @@ sx-escape-magic.self-insert() {
     local self_insert_function
     zstyle -s ':sx-escape-magic' self-insert-function self_insert_function
 
-    if [[ "$KEYS" == [\[\]\(\){}~^\;\*]* ]] && {
+    if [[ "$KEYS" == [\[\]\(\){}~^\;\*\'\"]* ]] && {
         local qkey="${(q)KEYS}"
         [[ "$KEYS" != "$qkey" ]]
     } && {
