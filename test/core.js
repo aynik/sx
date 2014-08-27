@@ -14,7 +14,14 @@ test("Should run all tests", function(t){
     t.test("sx --completion", function(t){
         t.plan(3);
         exec('./bin/sx --completion', testOut(t, function(stdout){
-            t.same(fs.readFileSync('./lib/completion.sh', 'utf-8'), stdout);
+            t.same(fs.readFileSync('./extra/completion.sh', 'utf-8'), stdout);
+        }));
+    });
+
+    t.test("sx --escaping", function(t){
+        t.plan(3);
+        exec('./bin/sx --escaping', testOut(t, function(stdout){
+            t.same(fs.readFileSync('./extra/escaping.sh', 'utf-8'), stdout);
         }));
     });
 

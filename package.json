@@ -12,7 +12,7 @@
         "plugin"
     ],
     "author": "aynik",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "preferGlobal": true,
     "repository": {
         "type": "git",
@@ -23,7 +23,8 @@
     },
     "bin": "./bin/sx",
     "dependencies": {
-        "commander": ">=2.3.0"
+        "commander": ">=2.3.0",
+        "node-jsjs": ">=0.0.3"
     },
     "devDependencies": {
         "tape": ">=2.13.4"

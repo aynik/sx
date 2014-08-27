@@ -2,8 +2,7 @@
 var readline = require('readline');
 var path = require('path');
 var fs = require('fs');
-var parser = require('../lib/parser');
-var compile = require('../lib/compiler');
+var jsjs = require('node-jsjs');
 
 var modules = ["child_process", "cluster", "console", "crypto", "dns", 
     "domain", "events", "fs", "http", "https", "net", "os", "path", "punycode", 
@@ -87,20 +86,20 @@ if ('complete' in program){
 }
 
 if (program.completion){
-    var script = path.resolve(__dirname, "../lib/completion.sh");
+    var script = path.resolve(__dirname, "../extra/completion.sh");
     console.log(fs.readFileSync(script, 'utf-8'));
     process.exit(0);
 }
 
 if (program.escaping){
-    var script = path.resolve(__dirname, "../lib/escaping.sh");
+    var script = path.resolve(__dirname, "../extra/escaping.sh");
     console.log(fs.readFileSync(script, 'utf-8'));
     process.exit(0);
 }
 
 // Auto-return and expose context
 try {
-    var stree = parser.parse(program.args.join(' '));
+    var stree = jsjs.parse(program.args.join(' '));
 } catch (err){
     if (err.name === 'SyntaxError'){
         var source = program.args.join(' ');
@@ -110,18 +109,21 @@ try {
         process.exit(1);
     }
 }
-if (stree.elements && stree.elements.length){
+if (stree && stree.elements && stree.elements.length){
     if (!program.async) stree.elements.splice(stree.elements.length-1, 1, 
         { "type": "ReturnStatement", value: stree.elements.slice(-1)[0] });
     stree.elements = [{ 
         "type": "WithStatement", "environment": { "type": "Variable", "name": "global" },
                 "statement": { "type": "Block", "statements": stree.elements }}];
     try {
-        program.args = compile(stree);
+        program.args = jsjs.compile({squeeze:true})(stree);
     } catch (err){
         console.log("CompilationError: " + err.message);
         process.exit(1);
     }
+} else {
+    console.log("SyntaxError: Cannot parse input");
+    process.exit(1);
 }
 
 // Manage end of piped input
