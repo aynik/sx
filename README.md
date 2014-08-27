@@ -1,6 +1,6 @@
 # Sx
 
-[![Build Status via Travis CI](https://travis-ci.org/aynik/be.svg?branch=master)](https://travis-ci.org/aynik/sx)
+[![Build Status via Travis CI](https://travis-ci.org/aynik/sx.svg?branch=master)](https://travis-ci.org/aynik/sx)
 
 `sx` is a command line utility which executes javascript code, mostly to process input and/or generate output.
 
