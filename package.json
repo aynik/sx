@@ -24,7 +24,7 @@
     "bin": "./bin/sx",
     "dependencies": {
         "commander": ">=2.3.0",
-        "node-jsjs": ">=0.0.3"
+        "node-jsjs": ">=0.0.8"
     },
     "devDependencies": {
         "tape": ">=2.13.4"

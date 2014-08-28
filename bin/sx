@@ -116,7 +116,7 @@ if (stree && stree.elements && stree.elements.length){
         "type": "WithStatement", "environment": { "type": "Variable", "name": "global" },
                 "statement": { "type": "Block", "statements": stree.elements }}];
     try {
-        program.args = jsjs.compile({squeeze:true})(stree);
+        program.args = jsjs.compile({squeeze:true}, stree);
     } catch (err){
         console.log("CompilationError: " + err.message);
         process.exit(1);
@@ -224,7 +224,8 @@ function run(line, buffer, lines, fn) {
 function print(result, line, lines) { 
     var args = [].slice.call(arguments, 1);
     if (program.string) {
-        result = "// vim: filetype=javascript\n" + result.toString();
+        result = "// vim: filetype=javascript" 
+            + jsjs.read({tab:4}, result.toString());
     } 
     if (typeof result === 'function') {
         if (program.line) {
