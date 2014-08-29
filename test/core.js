@@ -70,7 +70,7 @@ test("Should run all tests", function(t){
     t.test("sx --string", function(t){
         t.plan(3);
         exec('./bin/sx -s "Function()"', testOut(t, function(stdout){
-            t.same("// vim: filetype=javascript\nfunction anonymous(){\n    \n};", stdout);
+            t.same("// vim: filetype=javascript\nfunction anonymous() {}", stdout);
         }));
     });
 
