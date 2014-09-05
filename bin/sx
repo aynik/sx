@@ -53,6 +53,7 @@ var program = require('commander')
   .option('-i, --infile [file]', 'read from file instead of stdin')
   .option('-o, --outfile [file]', 'write to file instead of stdout')
   .option('-F, --file [file]', 'read from and write to file instead of stdin and stdout')
+  .option('-d, --dialect [dialect]', 'use an alternative dialect instead of standard javascript', 'js')
   .option('-c, --complete [word]', 'return completions for input (used by shells)') 
   .option('-C, --completion', 'return completion script (bash & zsh)') 
   .option('-E, --escaping', 'return auto-escaping script (zsh)') 
@@ -99,7 +100,7 @@ if (program.escaping){
 
 // Auto-return and expose context
 try {
-    var stree = jsjs.parse(program.args.join(' '));
+    var stree = jsjs.parse(program, program.args.join(' '));
 } catch (err){
     if (err.name === 'SyntaxError'){
         var source = program.args.join(' ');
@@ -114,7 +115,7 @@ if (stree && stree.elements && stree.elements.length){
         { "type": "ReturnStatement", value: stree.elements.slice(-1)[0] });
     stree.elements = [{ 
         "type": "WithStatement", "environment": { "type": "Variable", "name": "global" },
-                "statement": { "type": "Block", "statements": stree.elements }}];
+                "statement": { "type": "Block", "elements": stree.elements }}];
     try {
         program.args = jsjs.compile({squeeze:true}, stree);
     } catch (err){
@@ -224,8 +225,8 @@ function run(line, buffer, lines, fn) {
 function print(result, line, lines) { 
     var args = [].slice.call(arguments, 1);
     if (program.string) {
-        result = "// vim: filetype=javascript" 
-            + jsjs.read({tab:4}, result.toString());
+        result = "// vim: filetype=javascript\n" 
+            + jsjs.read({dialect:'js',tab:4}, result.toString());
     } 
     if (typeof result === 'function') {
         if (program.line) {

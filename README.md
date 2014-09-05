@@ -39,6 +39,7 @@ $ sx [options] "commands"
 * [`--infile, -i [file]`](#infile)
 * [`--outfile, -o [file]`](#outfile)
 * [`--file, -F [file]`](#file)
+* [`--dialect, -d [dialect]`](#dialect)
 
 ### Combos
 
@@ -235,6 +236,50 @@ __Examples__
 ```bash
 $ sx -bF Makefile "b.replace(/win32/i, 'darwin')"
 ```
+
+---
+
+<a name="dialect" />
+### sx --dialect [dialect] | -d [dialect]
+
+Use another input dialect instead of javascript.
+
+Javascript dialects are basically different languages which follow the style and the
+semantics of javascript.
+
+This library includes the following dialects:
+
+### Standard Javascript (js): Common ECMAScript 5.
+
+```js
+function pow(a, b){
+    for (var r = a, n = 0; n < b; n++) {
+        r = r * a
+    }
+    return r
+}
+
+function head(arr){
+    return arr.slice(0, 1);
+}
+```
+
+### Go-Script (gs): A clone of [Go](http://golang.com) syntax without the type stuff.
+
+```go
+func pow(a, b){
+    for r := a, n := 0; n < b; n++ {
+        r = r * a
+    }
+    return r
+}
+
+func head(arr){
+    return arr[0:1]
+}
+```
+
+More information (will be available soon) on (node-jsjs)[http://github.com/aynik/jsjs] parser repository.
 
 ---
 
