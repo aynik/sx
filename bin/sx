@@ -208,7 +208,7 @@ function run(line, buffer, lines, fn) {
             return result;
         }
     } catch (err) {
-        if (err.type === 'not_defined') {
+        if (err.type === 'not_defined' || err instanceof ReferenceError) {
             var name = getMissingName(err.stack);
             context[name] = frequire(name, function(name) {
                 console.error('error: couldn\'t load "' + name + '"');
