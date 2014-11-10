@@ -30,17 +30,17 @@ As an extra `sx` comes with an interactive REPL called `isx`. It allows to build
 $ isx <session-filename.js> 
 ```
 
-### Commands
+### In-REPL Commands
 
-    - :load <session-filename.js> - loads a worker and a new session into it's buffer
-    - :reload - reloads the worker and feeds in current buffer
-    - :test - sets the repl in test mode (no code is saved into the buffer) 
-    - :build - sets the repl in build mode (written code will be save into buffer) 
-    - :write - writes the current buffer to it's session file
-    - :drop N-N - drops lines from the buffer at the given range
-    - :move N-N N - moves selected lines at the given range to a destination line number in the buffer
-    - :print - prints the current buffer
-    - :quit - exits the repl
+- :load <session-filename.js> - loads a worker and a new session into it's buffer
+- :reload - reloads the worker and feeds in current buffer
+- :test - sets the repl in test mode (no code is saved into the buffer) 
+- :build - sets the repl in build mode (written code will be save into buffer) 
+- :write - writes the current buffer to it's session file
+- :drop N-N - drops lines from the buffer at the given range
+- :move N-N N - moves selected lines at the given range to a destination line number in the buffer
+- :print - prints the current buffer
+- :quit - exits the repl
 
 ## Documentation
 
