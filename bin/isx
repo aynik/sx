@@ -168,6 +168,7 @@ if (cluster.isMaster) {
                 buffer.push(script);
             } else {
                 console.log(colors.red('Error: ' + err));
+                process.send('undefined');
                 buffer = [];
             }
         }
