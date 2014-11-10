@@ -12,7 +12,7 @@
     "plugin"
   ],
   "author": "aynik",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "preferGlobal": true,
   "repository": {
     "type": "git",
@@ -21,8 +21,9 @@
   "bugs": {
     "url": "https://github.com/aynik/sx/issues"
   },
-  "bin": "./bin/sx",
+  "bin": { "sx": "./bin/sx", "isx": "./bin/isx" },
   "dependencies": {
+    "colors": "^1.0.3",
     "commander": ">=2.3.0",
     "node-jsjs": "^0.1.7"
   },

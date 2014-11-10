@@ -18,6 +18,29 @@ $ npm install -g sx
 - Standard and file I/O supported.
 - Many automations: module auto-loading, last value auto-return, auto-escaping for zsh and auto-completion both for zsh and bash.
 - Poor man's beautifier (JSON.stringify).
+- An interactive REPL
+
+## Interactive REPL
+
+As an extra `sx` comes with an interactive REPL called `isx`. It allows to build interactive programs by offering a set of REPL commands.
+
+### Usage
+
+```bash
+$ isx <session-filename.js> 
+```
+
+### Commands
+
+    - :load <session-filename.js> - loads a worker and a new session into it's buffer
+    - :reload - reloads the worker and feeds in current buffer
+    - :test - sets the repl in test mode (no code is saved into the buffer) 
+    - :build - sets the repl in build mode (written code will be save into buffer) 
+    - :write - writes the current buffer to it's session file
+    - :drop N-N - drops lines from the buffer at the given range
+    - :move N-N N - moves selected lines at the given range to a destination line number in the buffer
+    - :print - prints the current buffer
+    - :quit - exits the repl
 
 ## Documentation
 
@@ -53,7 +76,6 @@ $ sx [options] "commands"
 
 * [`Auto-completion`](#auto-completion)
 * [`Auto-escaping`](#auto-escaping)
-
 
 ---
 
