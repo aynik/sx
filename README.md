@@ -20,35 +20,12 @@ $ npm install -g sx
 - Poor man's beautifier (JSON.stringify).
 - An interactive REPL
 
-## Interactive REPL
-
-As an extra `sx` comes with an interactive REPL called `isx`. It allows to build interactive programs by offering a set of REPL commands.
-
-### Usage
-
-```bash
-$ isx <session-filename.js> 
-```
-
-### In-REPL Commands
-
-- :load <session-filename.js> - loads a worker and a new session into it's buffer
-- :reload - reloads the worker and feeds in current buffer
-- :test - sets the repl in test mode (no code is saved into the buffer) 
-- :build - sets the repl in build mode (written code will be save into buffer) 
-- :write - writes the current buffer to it's session file
-- :drop N-N - drops lines from the buffer at the given range
-- :move N-N N - moves selected lines at the given range to a destination line number in the buffer
-- :print - prints the current buffer
-- :quit - exits the repl
-
-## Documentation
+## Command-line tool
 
 ### Usage
 
 ```bash
 $ sx [options] "commands"
-```
 
 ### Options
 
@@ -76,6 +53,7 @@ $ sx [options] "commands"
 
 * [`Auto-completion`](#auto-completion)
 * [`Auto-escaping`](#auto-escaping)
+* [`Interactive REPL`](#interactive-repl)
 
 ---
 
@@ -421,4 +399,29 @@ $ echo "sx-escape-magic" >> ~/.zshrc
 
 Now when you restart your shell you should be able to write javascript 
 code and special characters will be automatically escaped.
+
+---
+<a name="interactive-repl" />
+## Interactive REPL
+
+As an extra, `sx` comes with an interactive REPL called `isx`. It allows to build interactive programs by offering a set of REPL commands.
+
+### Usage
+
+```bash
+$ isx <session-filename.js (default: .session.js)> 
+```
+
+### In-REPL Commands
+
+- **:load <session-filename.js>** loads a worker and a new session into it's buffer
+- **:reload** reloads the worker and feeds in current buffer
+- **:test** sets the repl in test mode (no code is saved into the buffer) 
+- **:build** sets the repl in build mode (written code will be save into buffer) 
+- **:write** writes the current buffer to it's session file
+- **:drop N-N** drops lines from the buffer at the given range
+- **:move N-N N** moves selected lines at the given range to a destination line number in the buffer
+- **:print** prints the current buffer
+- **:quit** exits the repl
+
 
