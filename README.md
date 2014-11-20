@@ -26,6 +26,7 @@ $ npm install -g sx
 
 ```bash
 $ sx [options] "commands"
+```
 
 ### Options
 
