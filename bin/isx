@@ -1,185 +1,88 @@
 #!/usr/bin/env node
-var fs = require('fs');
-var vm = require('vm');
-var path = require('path');
-var util = require('util');
-var repl = require("repl");
-var jsjs = require('node-jsjs');
-var colors = require('colors');
+var readline = require('readline');
 var cluster = require('cluster');
+var util = require('util');
+var vm = require('vm');
 var pack = require('../package');
 
-function pad(u, l, s, t){
-    return s || (s = " "), (l -= u.length) > 0 ? (s = new Array(Math.ceil(l / s.length)
-        + 1).join(s)).substr(0, t = !t ? l : t == 1 ? 0 : Math.ceil(l / 2))
-        + u + s.substr(0, l - t) : u;
+var colors = {
+    green: function(line){ return "\u001b[32m" + line + "\u001b[39m" },
+    blue: function(line){ return "\u001b[34m" + line + "\u001b[39m" },
+    red: function(line){ return "\u001b[31m" + line + "\u001b[39m" }
 }
 
+var rl = readline.createInterface(process.stdin, process.stdout, Function(), true);
+var workers = parseInt(process.argv[2] || 1, 10) % 100;
+
 if (cluster.isMaster) {
-    var session = process.argv[2] || ".session.js";
-    var buffer = [];
-    var state = {mode:'test'};
-    var worker = cluster.fork();
-    worker.setMaxListeners(9999);
-
-    function write(result){
-        return result.split('\n').map(function(line){
-            return colors.green('// ' + line);
-        }).join('\n');
-    }
-
-    function load(fname, callback){
-        fs.readFile(fname, 'utf-8', function(err, data){
-            if (err) {
-                if (!(err.message.match(/^ENOENT/) && fname === '.session.js')){
-                    console.log(colors.red('Error: ' + err));
-                }
-            } else {
-                var paths = [];
-                var dirparts = path.dirname(fname).split('/');
-                while (dirparts.length) {
-                    paths.unshift(dirparts.join('/') + '/node_modules');
-                    dirparts.pop();
-                }
-                worker.send('module.paths='+JSON.stringify(paths));
-                worker.send('process.chdir("'+path.dirname(fname)+'")');
-                worker.send(data);
-                console.log(colors.green('// loaded: '+fname));
-                buffer = data.split('\n');
-            }
-            console.log(colors.green('// mode: '+state.mode));
-            callback(null);
+    while (workers--) cluster.fork();
+    var workers = parseInt(process.argv[2] || 1, 10) % 100;
+    cluster.workers.send = function(message){
+        var that = this;
+        Object.keys(this).map(function(id){ 
+            if (id == +id) that[id].send(message);
         });
-    }
-
-    console.log(colors.green('// isx v'+pack.version));
-    console.log(colors.green('// session: '+session));
-    console.log(colors.green('// commands: :load, :reload, :test, :build, '));
-    console.log(colors.green('//           :write, :drop, :move, :print, :quit'));
-    load(session, function(){
-        var r = repl.start({
-            prompt: (buffer.length+1)+':> ',
-            ignoreUndefined: true,
-            input: process.stdin,
-            output: process.stdout,
-            writer: write,
-            eval: function reval(cmd, context, filename, callback){
-                var result, command = cmd.substr(1, cmd.length-3);
-                if (command.match(/^:/)) {
-                    var parts = command.substr(1, command.length).split(' ');
-                    switch (parts[0]) {
-                    case 'load': case 'l':
-                        worker.kill();
-                        worker = cluster.fork();
-                        worker.setMaxListeners(9999);
-                        var fname = parts[1] || session;    
-                        session = fname;
-                        load(fname, callback); 
-                        break;
-                    case 'reload': case 'r':
-                        console.log(colors.green('// reloading...'));
-                        return reval('(:l '+session+'\n)', context, filename, callback);
-                        break; 
-                    case 'test': case 't': 
-                        state.mode = 'test';
-                        console.log(colors.green('// mode: '+state.mode));
-                        callback(null);
-                        break;
-                    case 'build': case 'b': 
-                        state.mode = 'build';
-                        console.log(colors.green('// mode: '+state.mode));
-                        callback(null);
-                        break;
-                    case 'write': case 'w':
-                        var pretty = jsjs.read({dialect:'js',tab:4}, buffer.join('\n'));
-                        fs.writeFile(session, pretty, function(err){
-                            if (err) console.log(colors.red('Error: ' + err));
-                            console.log(colors.green('// written: '+session));
-                        });
-                        break;
-                    case 'drop': case 'd':
-                        var range = parts[1].split('-'), 
-                            range0 = parseInt(range[0]||1, 10),
-                            range1 = parseInt(range[1]||buffer.length-range0, 10);
-                        var from = range.length > 1 ? range0 : buffer.length - (buffer.length - range0);
-                        var len = range.length > 1 ? range1 - from : (buffer.length + 1) - from;
-                        console.log(colors.green('// dropping lines: '+from+'-'+(from+len)));
-                        console.log(colors.grey(buffer.splice(from-1, len).map(function(line, n){
-                            var num = pad(String(from + n + 1), String(buffer.length).length);
-                            return num+': '+line; 
-                        }).join('\n')));    
-                        break;
-                    case 'move': case 'm':
-                        var range = parts[1].split('-'), 
-                            range0 = parseInt(range[0]||1, 10),
-                            range1 = parseInt(range[1]||buffer.length-range0, 10);
-                        var dest = parseInt(parts[2]||buffer.length, 10);
-                        var from = range.length > 1 ? range0 : buffer.length - (buffer.length - range0);
-                        var len = range.length > 1 ? range1 - from : (buffer.length + 1) - from;
-                        console.log(colors.green('// moving lines: '+from+'-'+(from+len)+' to line '+dest));
-                        var old = buffer.slice();
-                        var slice = buffer.splice(from-1, len);
-                        buffer.splice.apply(buffer, [dest, 0].concat(slice));
-                        try {
-                            jsjs.read({dialect:'js',tab:4}, buffer.join('\n'));
-                        } catch (err) {
-                            console.log(colors.red('Error: Invalid Code Movement'));
-                            buffer = old;
-                        }
-                        break;
-                    case 'print': case 'p':
-                        if (!buffer.length) return callback(null);
-                        var pretty = jsjs.read({dialect:'js',tab:4}, buffer.join('\n'));
-                        console.log(colors.green(pretty.split('\n').map(function(line, n){
-                            var num = pad(String(n + 1), String(buffer.length).length);
-                            return '// ' + num+': '+line; 
-                        }).join('\n')));
-                        buffer = pretty.split('\n');
-                        callback(null);
-                        break;
-                    case 'quit': case 'q':
-                        console.log(colors.green('// quitting...'));
-                        process.exit(0);
-                        break;
-                    }
-                } else {
-                    worker.send(command);
-                    if (state.mode === "build") buffer = buffer.concat(command.split('\n'));
-                    r.prompt = (buffer.length+1)+':> ';
-                    r.rli._prompt = colors.green('... ');
-                    worker.once('message', function(result){
-                        callback(null, result === "'undefined'" ? void 0 : result); 
-                    });
-                }
-            }
+    };
+    cluster.workers.on = function(type, next){
+        var that = this;
+        Object.keys(this).map(function(id){ 
+            if (id == +id) that[id].on(type, function(args){
+                next.apply(0, args.concat(id));
+            });
         });
-        r.commands = {};
+    };
+    var answered = 0;
+    cluster.workers.on('message', function(err, result, worker){
+        answered = (answered + 1) % workers;
+        if (err !== "Unexpected end of input"){
+            if (err || result !== 'undefined'){
+                var prefix = workers > 1 ? '// ' + worker + ': ' : '// ';
+                if (err) console.log(colors.red(prefix + 'Error: ' + err));
+                else console.log(result.split('\n').map(function(line){
+                    return colors.green(prefix + line);
+                }).join('\n'));
+            }
+            rl.buffer = [];
+        }
+        if (!answered) process.stdout.write(rl._prompt);
     });
-} else {
-    var Module = require('module');
-    var lmodule = new Module('repl', module);
-    var lrequire = lmodule.require.bind(lmodule);
-    var sandbox = {};
-    for (var key in global) sandbox[key] = global[key];
-    sandbox.module = lmodule;
-    sandbox.require = lrequire;
-    var context = vm.createContext(sandbox);
-    var buffer = [];
-    process.on('message', function(script) {
-        try { 
-            var result = vm.runInContext(buffer.concat(script).join('\n'), context);
-            process.send(util.inspect(result||'undefined')); 
-            buffer = [];
-        } catch (err) {
-            if (err.name === "SyntaxError" && err.message === "Unexpected end of input"){
-                buffer.push(script);
-                process.stdout.write(colors.green('... '));
+    rl.buffer = [];
+    rl._prompt = colors.blue('> ');
+    rl._promptLength = 2;
+    rl._promptIndent = 0;
+    rl._ttyWrite = (function(){
+        var sure = false;
+        return function(s, key){
+            key = key || {};
+            if (key.ctrl && ['c','d'].indexOf(key.name) > -1){
+                if (sure) process.exit(0);
+                else sure = true;
+                var k = key.name.toUpperCase();
+                console.log('\n'+colors.red('Sure? Press CTRL+'+k+' again to exit...'));
             } else {
-
-                console.log(colors.red('Error: ' + err));
-                process.send('undefined');
-                buffer = [];
+                sure = false;
+                rl.__proto__._ttyWrite.apply(this, arguments);
             }
+        }
+    }());
+    rl.on('line', function(line){
+        rl.buffer.push(line);
+        cluster.workers.send(rl.buffer.join('\n'));
+        if (line.match(/{/) && !line.match(/}/)) rl._promptIndent++;
+        else if (line.match(/}/) && !line.match(/{/)) rl._promptIndent--;
+        rl._prompt = (new Array(rl._promptIndent+1)).join('....').replace(/\.$/, ' ') || colors.blue('> ');
+        rl._promptLength = rl._promptIndent ? rl._prompt.length : 2;
+    });
+    console.log(colors.blue("isx v" + pack.version));
+    process.stdout.write(rl._prompt);
+} else {  
+    global.cluster = cluster;
+    process.on('message', function(code){
+        try { 
+            var result = vm.runInThisContext(code); 
+            process.send([null, util.inspect(result)]) 
+        } catch (err) { 
+            process.send([err.message, null]) 
         }
     });
 }
