@@ -61,6 +61,7 @@ $ sx [options] "commands"
 ## Options
 
 <a name="pretty" />
+
 ### sx --pretty | -p 
 
 Pretty prints produced output, in case it's an object or an array.
@@ -80,6 +81,7 @@ $ sx -p "{hello:'world'}"
 ---
 
 <a name="json" />
+
 ### sx --json | -j
 
 Accepts input as JSON, useful for chaining sx calls.
@@ -97,6 +99,7 @@ Berlin
 ---
 
 <a name="line" />
+
 ### sx --line | -x
 
 Starts accepting input trough stdin, and exposes each line as `x`.
@@ -118,6 +121,7 @@ $ ps | sx -x 'x.match(/\d+/)[0]'
 ---
 
 <a name="list" />
+
 ### sx --list | -l
 
 Treats all input passed through stdin as an array of lines, and exposes it as `l`.
@@ -135,6 +139,7 @@ grep "console.log" * | sx -l l.length
 ---
 
 <a name="async" />
+
 ### sx --async | -a
 
 Expects an asynchronous result, code must pass result to print callback exposed as `a`.
@@ -152,6 +157,7 @@ $ /dev/urandom | sx -a "process.stdin.on('data', a); process.stdin.resume()"
 ---
 
 <a name="filter" />
+
 ### sx --filter | -f
 
 Uses provided code as a predicate to test input.
@@ -169,6 +175,7 @@ jayscript.js
 ---
 
 <a name="string" />
+
 ### sx --string | -s
 
 Calls current object's toString method.
@@ -189,6 +196,7 @@ function (requestListener) {
 ---
 
 <a name="infile" />
+
 ### sx --infile [file] | -i [file]
 
 Uses provided file as input instead of stdin.
@@ -205,6 +213,7 @@ node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ---
 
 <a name="outfile" />
+
 ### sx --outfile [file] | -o [file]
 
 Uses provided file as output instead of stdout.
@@ -224,6 +233,7 @@ $ tail -f /var/log/system.log | sx -xo local.log "console.log(x); x"
 ---
 
 <a name="file" />
+
 ### sx --file [file] | -F [file]
 
 Uses provided file as input instead of stdin and at the same time as output instead of stdout, could be used to mutate contents of files, writing to them after the contents are on memory.
@@ -241,6 +251,7 @@ $ sx -bF Makefile "b.replace(/win32/i, 'darwin')"
 ---
 
 <a name="dialect" />
+
 ### sx --dialect [dialect] | -d [dialect]
 
 Use another input dialect instead of javascript.
@@ -287,6 +298,7 @@ More information (will be available soon) on (node-jsjs)[http://github.com/aynik
 ## Combos
 
 <a name="line-list" />
+
 ### sx --json --line --list | -jxl
 
 Accepts JSON input, treating it as a list and exposing each item.
@@ -309,6 +321,7 @@ $ sx '_.range(8)' | sx -jxlf x%2==0
 ## More examples
 
 <a name="express-static-server" />
+
 #### Express static server
 
 ```bash
@@ -332,6 +345,7 @@ $ sx -a 'request.call(0, "http://google.com", function(err, resp, body){ a(body)
 ## Extras
 
 <a name="auto-completion" />
+
 ### Auto-completion
 
 Auto-completion is provided as a script for bash and zsh.
@@ -371,6 +385,7 @@ $ sx _.<tab>
 ---
 
 <a name="auto-escaping" />
+
 ### Auto-escaping
 
 Auto-escaping is provided as a function for zsh.
@@ -403,6 +418,7 @@ code and special characters will be automatically escaped.
 
 ---
 <a name="interactive-repl" />
+
 ## Interactive REPL
 
 As an extra, `sx` comes with an interactive REPL called `isx`. It allows to build interactive programs by offering a set of REPL commands.
